@@ -5,10 +5,13 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	<body onload="start()">
-		<h1>Output</h1>
-		<svg id="drawing"></svg>
+		<h1>Top</h1>
+		<svg width=800 height=300 id="drawing"></svg>
+		<h1>Bottom</h1>
 
 		<script>
+			var channel_width = 2.5;
+
 			function Point(x, y) {
 				this.x = x;
 				this.y = y;
@@ -33,8 +36,7 @@
 					this.y += d*Math.sin(this.rot);
 
 					this.drawing.push(new Point(this.x, this.y));
-				}
-			}
+				} }
 
 			function posMod(value, range) {
 				result = value % range;
@@ -114,17 +116,45 @@
 				for(var i=0; i < ptList.length-1; i++) {
 					var currentPt = ptList[i];
 					var nextPt = ptList[i+1];
-					draw.line(currentPt.x, currentPt.y, nextPt.x, nextPt.y).stroke({ width: 1 });
+					draw.line(currentPt.x, currentPt.y, nextPt.x, nextPt.y).stroke({ width: channel_width });
 				}
 			}
 
 			function start() {
+				var io1 = { x: 12, y: 12 }
+				var io2 = { x: 12, y: 38 }
+				var io3 = { x: 12, y: 64 }
+
 				// create svg drawing
 				var draw = SVG('drawing')
 
-				var t = new Turtle(100, 100, 0);
-				drawHilbertCurve(t, 4, 10);
+				//var slide = draw.rect(750, 250).attr({ fill: "#f06" });
+
+				var inlet1 = draw.circle(24);
+				inlet1.attr('cx', io1.x);
+				inlet1.attr('cy', io1.y);
+
+				var inlet2 = draw.circle(24);
+				inlet2.attr('cx', io2.x);
+				inlet2.attr('cy', io2.y);
+
+				var outlet1 = draw.circle(24);
+				outlet1 .attr('cx', io3.x);
+				outlet1 .attr('cy', io3.y);
+
+				var t = new Turtle(64, 12, 0);
+				t.turn(3*Math.PI/2);
+				drawHilbertCurve(t, 5, 4);
 				drawPoints(draw, t.drawing);
+
+				// input pipes
+				draw.line(io1.x, io1.y, t.drawing[0].x, t.drawing[0].y).stroke({ width: channel_width });
+				draw.line(io2.x, io2.y, 32, io2.y).stroke({ width: channel_width });
+				draw.line(32, io2.y, t.drawing[0].x-8, t.drawing[0].y).stroke({ width: channel_width });
+
+				// output pipes
+				draw.line(io3.x, io3.y, io3.x, t.drawing[t.drawing.length-1].y).stroke({ width: channel_width });
+				draw.line(io3.x, t.drawing[t.drawing.length-1].y, t.drawing[t.drawing.length-1].x, t.drawing[t.drawing.length-1].y).stroke({ width: channel_width });
 			}
 		</script>
 
