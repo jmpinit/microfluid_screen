@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>MicroFluidic Screen</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	</head>
+	<body onload="start()">
+		<h1>Output</h1>
+		<svg id="drawing"></svg>
+
+		<script>
+			function Point(x, y) {
+				this.x = x;
+				this.y = y;
+			}
+
+			function Turtle(x, y, rot){
+				this.x = x;
+				this.y = y;
+				this.rot = rot;
+
+				this.drawing = [];
+			}
+
+			Turtle.prototype = {
+				turn: function(angle) {
+					this.rot -= angle;
+					this.rot %= 2*Math.PI;
+				},
+
+				forward: function(d) {
+					this.x += d*Math.cos(this.rot);
+					this.y += d*Math.sin(this.rot);
+
+					this.drawing.push(new Point(this.x, this.y));
+				}
+			}
+
+			function posMod(value, range) {
+				result = value % range;
+				if(result < 0) result += range;
+				return result;
+			}
+
+			function drawHilbertCurve(turtle, order, scale) {
+				directions = hilbert(order, "up");
+
+				heading = 0;
+				for(var i in directions) {
+					var currentDir = directions[i];
+
+					turnAngle = posMod(currentDir - heading, 2*Math.PI);
+
+					turtle.turn(turnAngle); heading += turnAngle;
+					turtle.forward(scale);
+				}
+			}
+
+			var dirs = {
+				up: Math.PI/2,
+				right: 0,
+				down: 3*Math.PI/2,
+				left: Math.PI
+			}
+
+			function hilbert(order, turn) {
+				var curve = [];
+
+				if(order != 0) {
+					switch(turn) {
+						case "up":
+							curve.push.apply(curve, hilbert(order-1, "right"));
+							curve.push(dirs["up"]); // up-line
+							curve.push.apply(curve, hilbert(order-1, "up"));
+							curve.push(dirs["right"]); // right-line
+							curve.push.apply(curve, hilbert(order-1, "up"));
+							curve.push(dirs["down"]); // down-line
+							curve.push.apply(curve, hilbert(order-1, "left"));
+							break;
+						case "left":
+							curve.push.apply(curve, hilbert(order-1, "down"));
+							curve.push(dirs["left"]); // left-line
+							curve.push.apply(curve, hilbert(order-1, "left"));
+							curve.push(dirs["down"]); // down-line
+							curve.push.apply(curve, hilbert(order-1, "left"));
+							curve.push(dirs["right"]); // right-line
+							curve.push.apply(curve, hilbert(order-1, "up"));
+							break;
+						case "right":
+							curve.push.apply(curve, hilbert(order-1, "up"));
+							curve.push(dirs["right"]); // right-line
+							curve.push.apply(curve, hilbert(order-1, "right"));
+							curve.push(dirs["up"]); // up-line
+							curve.push.apply(curve, hilbert(order-1, "right"));
+							curve.push(dirs["left"]); // left-line
+							curve.push.apply(curve, hilbert(order-1, "down"));
+							break;
+						case "down":
+							curve.push.apply(curve, hilbert(order-1, "left"));
+							curve.push(dirs["down"]); // down-line
+							curve.push.apply(curve, hilbert(order-1, "down"));
+							curve.push(dirs["left"]); // left-line
+							curve.push.apply(curve, hilbert(order-1, "down"));
+							curve.push(dirs["up"]); // up-line
+							curve.push.apply(curve, hilbert(order-1, "right"));
+							break;
+					}
+				}
+
+				return curve;
+			}
+
+			function drawPoints(draw, ptList) {
+				for(var i=0; i < ptList.length-1; i++) {
+					var currentPt = ptList[i];
+					var nextPt = ptList[i+1];
+					draw.line(currentPt.x, currentPt.y, nextPt.x, nextPt.y).stroke({ width: 1 });
+				}
+			}
+
+			function start() {
+				// create svg drawing
+				var draw = SVG('drawing')
+
+				var t = new Turtle(100, 100, 0);
+				drawHilbertCurve(t, 4, 10);
+				drawPoints(draw, t.drawing);
+			}
+		</script>
+
+		<script src="js/svg.min.js"></script>
+		<script src="http://code.jquery.com/jquery.js"></script>
+	</body>
+</html>
